@@ -15,7 +15,7 @@
 
 (def table-name "TestTable")
 
-(def sample-size 100)
+(def sample-size 1000)
 
 (defn add-drop-table [f]
   (create-table cred
@@ -80,17 +80,17 @@
     times))
 
 (deftest benchmark []
-  (println "running put-amazonica")
-  (spit "put-az.csv" (apply str (interpose "," (execute put-az))))
-  
   (println "running put-rotary")
   (spit "put-rotary.csv" (apply str (interpose "," (execute put-rotary))))
 
-  (println "running get-az")
-  (spit "get-az.csv" (apply str (interpose "," (execute get-az))))
+  (println "running put-amazonica")
+  (spit "put-az.csv" (apply str (interpose "," (execute put-az))))
 
   (println "running get-rotary")
   (spit "get-rotary.csv" (apply str (interpose "," (execute get-rotary))))
+
+  (println "running get-az")
+  (spit "get-az.csv" (apply str (interpose "," (execute get-az))))
 )
 
 
