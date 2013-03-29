@@ -6,6 +6,7 @@
         [amazonica.core]
         [amazonica.aws.dynamodb]))
 
+
 (def cred 
   (apply 
     hash-map 
@@ -15,7 +16,7 @@
 
 (def table-name "TestTable")
 
-(def sample-size 1000)
+(def sample-size 10)
 
 (defn add-drop-table [f]
   (create-table cred
@@ -39,11 +40,9 @@
           (recur (get-in (describe-table cred :table-name table)
                           [:table :table-status]))))))
   
-  (f) ; run the test
+  (f)
   
-  (try
-    (delete-table cred :table-name table-name)
-    (catch Exception e))
+  (delete-table cred :table-name table-name)
 )
 
 (defn put-rotary [x]
@@ -69,29 +68,40 @@
             :key (str "foo" x)))
 
 (defn execute [f]
-  (let [tt (System/nanoTime)
-        times (int-array sample-size)]
+  (let [tt    (System/nanoTime)
+        raw   (int-array sample-size)
+        times (make-array Object sample-size)]
     (dotimes [x sample-size]
       (let [t (System/nanoTime)]
         (f x)
-         (aset-int times x (- (System/nanoTime) t))))
-    (println (/ (double (- (System/nanoTime) tt)) 1000000))
-    (println (double (/ (/ (apply + (seq times)) sample-size) 1000000)))
+        (aset-int raw x (double (/ (- (System/nanoTime) t) 1000000)))
+        (aset times x (str "[" x "," (aget raw x) "]"))))
+    (println "total time:"
+      (/ (double (- (System/nanoTime) tt)) 1000000))
+    (println "avg sample latency:" 
+      (double (/ (/ (apply + (seq raw)) sample-size) 1)))
     times))
 
+(def test-functions [#'put-rotary #'put-az #'get-rotary #'get-az])
+
 (deftest benchmark []
-  (println "running put-rotary")
-  (spit "put-rotary.csv" (apply str (interpose "," (execute put-rotary))))
-
-  (println "running put-amazonica")
-  (spit "put-az.csv" (apply str (interpose "," (execute put-az))))
-
-  (println "running get-rotary")
-  (spit "get-rotary.csv" (apply str (interpose "," (execute get-rotary))))
-
-  (println "running get-az")
-  (spit "get-az.csv" (apply str (interpose "," (execute get-az))))
+  (doseq [f test-functions]
+    (println "running " (:name (meta f)))
+    (spit 
+      (str (:name (meta f)))
+      (apply str (interpose "," (execute @f)))))
 )
 
 
 (use-fixtures :once add-drop-table)
+
+
+
+; (def csv (.split (slurp "get-az-csv") ","))
+
+; (double (/ 
+;   (reduce
+;     #(+ % (Integer/valueOf %2))
+;     0
+;     csv)
+;   (* 1000000 (count csv))))

@@ -1,35 +1,12 @@
 # benchmark
 
-FIXME: description
-
-## Installation
-
-Download from http://example.com/FIXME.
+Quick and dirty benchmark code for measuring the performance of the [Amazonica] [1] library. 
 
 ## Usage
 
-FIXME: explanation
+Run the pallet script to start an EC2 node, from which you can then use lein to run the benchmark. (Generated csv data will need to be manually copied into the html graph renderer if you want a visualization of the data.)
 
-    $ java -jar benchmark-0.1.0-standalone.jar [args]
-
-## Options
-
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2013 FIXME
 
 Distributed under the Eclipse Public License, the same as Clojure.
+
+[1]: https://github.com/mcohen01/amazonica
