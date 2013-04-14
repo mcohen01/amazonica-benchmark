@@ -1,6 +1,16 @@
 (ns benchmark.runner
   (:require [clojure.string :as str]
             [rotary.client :as rotary])
+  (:import clojure.lang.Reflector
+           java.util.HashMap
+           benchmark.JavaDynamoClient
+           com.amazonaws.services.dynamodb.AmazonDynamoDBClient
+           [com.amazonaws.auth
+             AWSCredentials
+             BasicAWSCredentials]
+           [com.amazonaws.regions
+             Region
+             Regions])
   (:use [clojure.test]
         [clojure.pprint]        
         [amazonica.core]
@@ -16,7 +26,7 @@
 
 (def table-name "TestTable")
 
-(def sample-size 10)
+(def sample-size 1000)
 
 (defn add-drop-table [f]
   (create-table cred
@@ -67,6 +77,38 @@
             :table-name table-name
             :key (str "foo" x)))
 
+(def java-client 
+  (let [aws-creds (BasicAWSCredentials.
+                    (:access-key cred)
+                    (:secret-key cred))
+        client    (Reflector/invokeConstructor
+                    AmazonDynamoDBClient
+                    (into-array [aws-creds]))]
+    (when-let [endpoint (:endpoint cred)]
+      (->> (-> (str/upper-case endpoint)
+               (.replaceAll "-" "_"))
+           Regions/valueOf
+           Region/getRegion
+           (.setRegion client)))
+    client))
+
+
+(defn put-java
+  [x]
+  (JavaDynamoClient/putItem
+    java-client
+    table-name
+    (java.util.HashMap. 
+      {"id" (str "foo" x)
+       "text" (str "barbaz" x)})))
+
+(defn get-java [x]
+  (JavaDynamoClient/getItem
+    java-client
+    table-name
+    (str x)))
+
+
 (defn execute [f]
   (let [tt    (System/nanoTime)
         raw   (int-array sample-size)
@@ -82,7 +124,7 @@
       (double (/ (/ (apply + (seq raw)) sample-size) 1)))
     times))
 
-(def test-functions [#'put-rotary #'put-az #'get-rotary #'get-az])
+(def test-functions [#'put-rotary #'put-az #'get-rotary #'get-az #'put-java #'get-java])
 
 (deftest benchmark []
   (doseq [f test-functions]

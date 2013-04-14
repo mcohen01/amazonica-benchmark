@@ -25,6 +25,7 @@
              :leiningen/reply
              {:dependencies [[org.slf4j/jcl-over-slf4j "1.7.2"]]
               :exclusions [commons-logging]}}
+  :java-source-paths ["src/main/java"]
   :local-repo-classpath true
   :repositories
   {"sonatype-snapshots" "https://oss.sonatype.org/content/repositories/snapshots"
